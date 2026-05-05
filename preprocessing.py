@@ -1,48 +1,25 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.impute import SimpleImputer
 
 
 def preprocess_data(df, target_column):
-    # Remove rows with NaN target
-    df = df.dropna(subset=[target_column]).copy()
-
-    if df.empty:
-        raise ValueError(f"All rows have missing values in '{target_column}'.")
-
     y = df[target_column]
     X = df.drop(columns=[target_column])
 
-    # Detect task type
-    is_float = pd.api.types.is_float_dtype(y)
-    n_unique = y.nunique()
-    task = "regression" if (is_float and n_unique > 2) else "classification"
+    task = "regression" if y.dtype == "float64" and y.nunique() > 2 else "classification"
 
-    # Split first to prevent data leakage
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Identify numeric and categorical columns
-    numeric_cols = X_train.select_dtypes(include="number").columns.tolist()  # type: ignore[union-attr]
-    categorical_cols = X_train.select_dtypes(include=["object", "category"]).columns.tolist()  # type: ignore[union-attr]
+    num = X_train.select_dtypes(include="number").columns.tolist()  # type: ignore[union-attr]
+    cat = X_train.select_dtypes(exclude="number").columns.tolist()  # type: ignore[union-attr]
 
-    # Impute and scale numeric features
-    num_imputer = SimpleImputer(strategy="mean")
-    scaler = StandardScaler()
-    X_train[numeric_cols] = scaler.fit_transform(
-        num_imputer.fit_transform(X_train[numeric_cols])
-    )
-    X_test[numeric_cols] = scaler.transform(
-        num_imputer.transform(X_test[numeric_cols])
-    )
-
-    # One-hot encode categorical features (fit on train only)
-    X_train = pd.get_dummies(X_train, columns=categorical_cols, drop_first=True)
-    X_test = pd.get_dummies(X_test, columns=categorical_cols, drop_first=True)
-
-    # Align columns between train and test (handle unseen categories)
+    X_train = pd.get_dummies(X_train, columns=cat, drop_first=True)
+    X_test = pd.get_dummies(X_test, columns=cat, drop_first=True)
     X_test = X_test.reindex(columns=X_train.columns, fill_value=0)
+
+    scaler = StandardScaler()
+    X_train[num] = scaler.fit_transform(X_train[num])
+    X_test[num] = scaler.transform(X_test[num])
 
     return X_train, X_test, y_train, y_test, task
