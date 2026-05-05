@@ -5,7 +5,7 @@ from preprocessing import preprocess_data
 from models import get_models, train_models
 from evaluation import evaluate_models
 
-st.set_page_config(page_title="ML Comparison App", layout="wide")
+st.set_page_config(page_title="ML Comparison App", layout="centered")
 
 st.title("📊 Machine Learning Model Comparison")
 
@@ -24,15 +24,14 @@ if uploaded_file:
     if st.button("🚀 Run Models"):
         with st.spinner("Processing..."):
 
-            # Preprocessing
-            X_train, X_test, y_train, y_test = preprocess_data(df, target_column)
+            try:
+                # Preprocessing
+                X_train, X_test, y_train, y_test, task = preprocess_data(df, target_column)
+            except ValueError as e:
+                st.error(str(e))
+                st.stop()
 
-            # Detect task type
-            is_float = pd.api.types.is_float_dtype(y_train)
-            n_unique = y_train.nunique()
-            task = "regression" if (is_float and n_unique > 2) else "classification"
-
-            st.info(f"Task detected: **{task.upper()}** ({n_unique} unique target values)")
+            st.info(f"Task detected: **{task.upper()}** ({y_train.nunique()} unique target values)")
 
             # Models
             models = get_models(task)

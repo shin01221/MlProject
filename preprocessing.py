@@ -5,8 +5,19 @@ from sklearn.impute import SimpleImputer
 
 
 def preprocess_data(df, target_column):
+    # Remove rows with NaN target
+    df = df.dropna(subset=[target_column]).copy()
+
+    if df.empty:
+        raise ValueError(f"All rows have missing values in '{target_column}'.")
+
     y = df[target_column]
     X = df.drop(columns=[target_column])
+
+    # Detect task type
+    is_float = pd.api.types.is_float_dtype(y)
+    n_unique = y.nunique()
+    task = "regression" if (is_float and n_unique > 2) else "classification"
 
     # Split first to prevent data leakage
     X_train, X_test, y_train, y_test = train_test_split(
@@ -34,4 +45,4 @@ def preprocess_data(df, target_column):
     # Align columns between train and test (handle unseen categories)
     X_test = X_test.reindex(columns=X_train.columns, fill_value=0)
 
-    return X_train, X_test, y_train, y_test
+    return X_train, X_test, y_train, y_test, task
