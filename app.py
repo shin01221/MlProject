@@ -27,12 +27,19 @@ if uploaded_file:
             # Preprocessing
             X_train, X_test, y_train, y_test = preprocess_data(df, target_column)
 
+            # Detect task type
+            is_float = pd.api.types.is_float_dtype(y_train)
+            n_unique = y_train.nunique()
+            task = "regression" if (is_float and n_unique > 2) else "classification"
+
+            st.info(f"Task detected: **{task.upper()}** ({n_unique} unique target values)")
+
             # Models
-            models = get_models()
+            models = get_models(task)
             trained_models = train_models(models, X_train, y_train)
 
             # Evaluation
-            results = evaluate_models(trained_models, X_test, y_test)
+            results = evaluate_models(trained_models, X_test, y_test, task)
 
             results_df = pd.DataFrame(results)
 
@@ -42,11 +49,12 @@ if uploaded_file:
         st.dataframe(results_df)
 
         # Best model
-        best_model = results_df.sort_values(by="Accuracy", ascending=False).iloc[0]
+        metric = "R2" if task == "regression" else "Accuracy"
+        best_model = results_df.sort_values(by=metric, ascending=(task == "regression")).iloc[0]
 
         st.subheader("🏆 Best Model")
         st.write(best_model)
 
         # Chart
-        st.subheader("📊 Accuracy Comparison")
-        st.bar_chart(results_df.set_index("Model")["Accuracy"])
+        st.subheader(f"📊 {metric} Comparison")
+        st.bar_chart(results_df.set_index("Model")[metric])

@@ -1,9 +1,15 @@
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression, Ridge
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 
-def get_models():
+def get_models(task="classification"):
+    if task == "regression":
+        return {
+            "Ridge": Ridge(),
+            "Decision Tree": DecisionTreeRegressor(),
+            "Random Forest": RandomForestRegressor(),
+        }
     return {
         "Logistic Regression": LogisticRegression(max_iter=1000),
         "Decision Tree": DecisionTreeClassifier(),
@@ -17,5 +23,4 @@ def train_models(models, X_train, y_train):
     for name, model in models.items():
         model.fit(X_train, y_train)
         trained_models[name] = model
-
     return trained_models
