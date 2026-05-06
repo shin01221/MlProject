@@ -4,9 +4,7 @@ A simple Streamlit app that automatically trains and compares machine learning m
 
 ## Demo
 
-<video src="./recording_20260505_210050.mp4" controls width="100%"></video>
-
-[Download demo video](./recording_20260505_210050.mp4)
+![Demo](demo.gif)
 
 ## Features
 
